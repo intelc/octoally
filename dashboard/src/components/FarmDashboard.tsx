@@ -252,7 +252,7 @@ function ActionBtn({
 
 function TerminalDrawer({ plot, onClose }: { plot: Plot; onClose: () => void }) {
   return (
-    <div className="absolute inset-0 z-30 flex justify-end" style={{ background: 'rgba(0,0,0,0.4)' }} onClick={onClose}>
+    <div className="fixed inset-0 z-30 flex justify-end" style={{ background: 'rgba(0,0,0,0.4)' }} onClick={onClose}>
       <div
         className="h-full w-full max-w-3xl flex flex-col"
         style={{ background: 'var(--bg-primary)', borderLeft: '1px solid var(--border)' }}
@@ -302,7 +302,7 @@ function FertilizeModal({ plot, onClose }: { plot: Plot; onClose: () => void }) 
   };
 
   return (
-    <div className="absolute inset-0 z-40 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={onClose}>
+    <div className="fixed inset-0 z-40 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={onClose}>
       <div
         className="w-full max-w-lg rounded-xl p-5 flex flex-col gap-3"
         style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}
@@ -351,7 +351,7 @@ function FertilizeModal({ plot, onClose }: { plot: Plot; onClose: () => void }) 
 
 function HarvestModal({ plot, onClose, onOpenTerminal }: { plot: Plot; onClose: () => void; onOpenTerminal: () => void }) {
   return (
-    <div className="absolute inset-0 z-40 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={onClose}>
+    <div className="fixed inset-0 z-40 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={onClose}>
       <div
         className="w-full max-w-md rounded-xl p-5 flex flex-col gap-4"
         style={{ background: 'var(--bg-secondary)', border: `1px solid ${STATE_META.ripe.color}` }}
@@ -454,6 +454,12 @@ export function FarmDashboard({ active }: { active: boolean }) {
               active={active && view === 'scene'}
               onInspect={(p) => setInspectPlot(p)}
               onPlantEmpty={() => setPlanting(true)}
+              onFertilize={(p) => setFertilizePlot(p)}
+              onHarvest={(p) => setHarvestPlot(p)}
+              onHarvestAll={() => { const r = plots.find((p) => p.state === 'ripe'); if (r) setHarvestPlot(r); }}
+              onKill={(p) => killMutation.mutate({ id: p.terminalSessionId })}
+              onWarehouse={() => setView('list')}
+              onShop={() => setPlanting(true)}
             />
           </div>
         ) : (

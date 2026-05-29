@@ -2,6 +2,8 @@ import { useMemo, useRef, useState } from 'react';
 import { isoToScreen, zIndexFor } from '../../farm/iso';
 import { IsoTile } from './IsoTile';
 import { PlotSprite } from './PlotSprite';
+import { FarmHud } from './FarmHud';
+import { FarmToolbar } from './FarmToolbar';
 import { useFarmGame, type Plot } from '../../farm/useFarmGame';
 
 const TILE_W = 132;
@@ -26,14 +28,24 @@ function layout(plots: Plot[]): Cell[] {
 }
 
 export function FarmScene({
-  active, onInspect, onPlantEmpty,
+  active, onInspect, onPlantEmpty, onFertilize, onHarvest, onHarvestAll, onKill, onWarehouse, onShop,
 }: {
   active: boolean;
   onInspect: (plot: Plot) => void;
   onPlantEmpty: () => void;
+  onFertilize: (plot: Plot) => void;
+  onHarvest: (plot: Plot) => void;
+  onHarvestAll: () => void;
+  onKill: (plot: Plot) => void;
+  onWarehouse: () => void;
+  onShop: () => void;
 }) {
-  const { plots, isLoading } = useFarmGame(active);
+  const { plots, hud, isLoading } = useFarmGame(active);
   const cells = useMemo(() => layout(plots), [plots]);
+
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selected = plots.find((p) => p.plotId === selectedId) ?? null;
+  const ripeCount = plots.filter((p) => p.state === 'ripe').length;
 
   // simple drag-to-pan
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -83,11 +95,30 @@ export function FarmScene({
                 seed={cell.col + cell.row * COLS}
                 onClick={!cell.plot ? onPlantEmpty : undefined}
               />
-              {cell.plot && <PlotSprite plot={cell.plot} tileW={TILE_W} onClick={() => onInspect(cell.plot!)} />}
+              {cell.plot && (
+                <PlotSprite
+                  plot={cell.plot}
+                  tileW={TILE_W}
+                  selected={cell.plot.plotId === selectedId}
+                  onClick={() => setSelectedId(cell.plot!.plotId)}
+                />
+              )}
             </div>
           );
         })}
       </div>
+
+      <FarmHud hud={hud} onShop={onShop} />
+      <FarmToolbar
+        selected={selected}
+        ripeCount={ripeCount}
+        onInspect={onInspect}
+        onFertilize={onFertilize}
+        onHarvest={onHarvest}
+        onHarvestAll={onHarvestAll}
+        onKill={onKill}
+        onWarehouse={onWarehouse}
+      />
     </div>
   );
 }

@@ -2,16 +2,18 @@ import { CropSprite } from './CropSprite';
 import type { Plot } from '../../farm/useFarmGame';
 import type { CropKind, PlotState } from '../../farm/farmArt';
 
-/** A crop sitting on its tile, with a hover label and click handler. */
-export function PlotSprite({ plot, tileW, onClick }: { plot: Plot; tileW: number; onClick: () => void }) {
+/** A crop sitting on its tile, with a hover label, selection highlight, and click handler. */
+export function PlotSprite({ plot, tileW, selected, onClick }: { plot: Plot; tileW: number; selected?: boolean; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
       title={`${plot.crop.name} — ${plot.state} · ${plot.taskName}`}
       style={{
         position: 'absolute', left: '50%', bottom: tileW * 0.12,
-        transform: 'translateX(-50%)', background: 'none', border: 'none',
-        cursor: 'pointer', padding: 0, zIndex: 2,
+        transform: `translateX(-50%) scale(${selected ? 1.12 : 1})`,
+        transformOrigin: 'bottom center',
+        background: 'none', border: 'none', cursor: 'pointer', padding: 0, zIndex: 2,
+        filter: selected ? 'drop-shadow(0 0 6px rgba(255,236,150,0.95))' : undefined,
       }}
     >
       <CropSprite kind={plot.crop.kind as CropKind} state={plot.state as PlotState} size={tileW * 0.66} />
