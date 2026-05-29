@@ -163,3 +163,19 @@ select:hover {
 @media (prefers-reduced-motion: reduce) {
   .farm-burst-ring, .farm-burst-label, .farm-burst-spark { animation-duration: 0.01ms; }
 }
+
+/* ---- Agent Farm: plant pop-in + HUD coin bump ---- */
+@keyframes farm-pop {
+  0%   { transform: scale(0.2); opacity: 0; }
+  60%  { transform: scale(1.12); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.farm-pop { animation: farm-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+@keyframes farm-coin-bump {
+  0%, 100% { transform: scale(1); }
+  45%      { transform: scale(1.28); }
+}
+.farm-coin-bump { animation: farm-coin-bump 0.45s ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .farm-pop, .farm-coin-bump { animation: none; }
+}

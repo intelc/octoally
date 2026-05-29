@@ -160,6 +160,7 @@ export function FarmScene({
                 tileW={TILE_W}
                 selected={cell.plot.plotId === selectedId}
                 eligible={!!tool && eligibleForTool(cell.plot.state, tool)}
+                dimmed={!!tool && !eligibleForTool(cell.plot.state, tool)}
                 onClick={() => { if (!drag.current?.moved) handlePlotClick(cell.plot!); }}
               />
             )}

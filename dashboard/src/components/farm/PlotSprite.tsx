@@ -2,8 +2,12 @@ import { CropSprite } from './CropSprite';
 import type { Plot } from '../../farm/useFarmGame';
 import type { CropKind, PlotState } from '../../farm/farmArt';
 
-/** A crop sitting on its tile, with a hover label, selection highlight, and click handler. */
-export function PlotSprite({ plot, tileW, selected, eligible, onClick }: { plot: Plot; tileW: number; selected?: boolean; eligible?: boolean; onClick: () => void }) {
+/** A crop on its tile: hover label, selection/eligible highlight, tool-mode dimming, plant pop-in. */
+export function PlotSprite({
+  plot, tileW, selected, eligible, dimmed, onClick,
+}: {
+  plot: Plot; tileW: number; selected?: boolean; eligible?: boolean; dimmed?: boolean; onClick: () => void;
+}) {
   const glow = selected
     ? 'drop-shadow(0 0 6px rgba(255,236,150,0.95))'
     : eligible
@@ -20,9 +24,14 @@ export function PlotSprite({ plot, tileW, selected, eligible, onClick }: { plot:
         transformOrigin: 'bottom center',
         background: 'none', border: 'none', cursor: 'pointer', padding: 0, zIndex: 2,
         filter: glow,
+        opacity: dimmed ? 0.35 : 1,
+        transition: 'opacity 0.2s',
       }}
     >
-      <CropSprite kind={plot.crop.kind as CropKind} state={plot.state as PlotState} size={tileW * 0.66} />
+      {/* inner wrapper plays the one-time plant pop-in without fighting the button's transform */}
+      <div className="farm-pop">
+        <CropSprite kind={plot.crop.kind as CropKind} state={plot.state as PlotState} size={tileW * 0.66} />
+      </div>
     </button>
   );
 }
