@@ -13,6 +13,7 @@ import type { AppRouter } from '../../../server/src/trpc/router.js';
 import { trpc } from '../lib/trpc';
 import { Terminal } from './Terminal';
 import { FarmScene } from './farm/FarmScene';
+import { SeedPacketPicker } from './farm/SeedPacketPicker';
 import {
   Sprout, Eye, Trash2, X, FlaskConical,
   Wheat, RefreshCw, Loader2, Send,
@@ -401,6 +402,7 @@ export function FarmDashboard({ active }: { active: boolean }) {
   });
 
   const [view, setView] = useState<'scene' | 'list'>('scene');
+  const [planting, setPlanting] = useState(false);
   const [filter, setFilter] = useState<Filter>('all');
   const [inspectPlot, setInspectPlot] = useState<Plot | null>(null);
   const [fertilizePlot, setFertilizePlot] = useState<Plot | null>(null);
@@ -451,7 +453,7 @@ export function FarmDashboard({ active }: { active: boolean }) {
             <FarmScene
               active={active && view === 'scene'}
               onInspect={(p) => setInspectPlot(p)}
-              onPlantEmpty={() => { /* Phase 2: open SeedPacketPicker */ }}
+              onPlantEmpty={() => setPlanting(true)}
             />
           </div>
         ) : (
@@ -503,6 +505,7 @@ export function FarmDashboard({ active }: { active: boolean }) {
       </div>
 
       {/* Overlays */}
+      {planting && <SeedPacketPicker onClose={() => setPlanting(false)} onPlanted={() => utils.farm.plots.invalidate()} />}
       {freshInspect && <TerminalDrawer plot={freshInspect} onClose={() => setInspectPlot(null)} />}
       {fertilizePlot && <FertilizeModal plot={fertilizePlot} onClose={() => setFertilizePlot(null)} />}
       {harvestPlot && (
