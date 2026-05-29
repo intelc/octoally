@@ -4,6 +4,7 @@ import { getDb } from '../db/index.js';
 import { getEvents } from '../services/event-store.js';
 import * as sessionManager from '../services/session-manager.js';
 import { nanoid } from 'nanoid';
+import { listPlots, getPlot } from '../lib/farm-service.js';
 
 export const appRouter = router({
   // Projects
@@ -88,6 +89,17 @@ export const appRouter = router({
           since: input?.since,
         });
       }),
+  }),
+
+  // Farm — sessions mapped to crops/plots for the Agent Farm UI
+  farm: router({
+    plots: publicProcedure
+      .input(z.object({ status: z.string().optional() }).optional())
+      .query(({ input }) => listPlots(input?.status)),
+
+    plot: publicProcedure
+      .input(z.object({ id: z.string() }))
+      .query(({ input }) => getPlot(input.id)),
   }),
 
   // Health
