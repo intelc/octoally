@@ -12,6 +12,7 @@ import type { inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from '../../../server/src/trpc/router.js';
 import { trpc } from '../lib/trpc';
 import { Terminal } from './Terminal';
+import { FarmScene } from './farm/FarmScene';
 import {
   Sprout, Eye, Trash2, X, FlaskConical,
   Wheat, RefreshCw, Loader2, Send,
@@ -399,6 +400,7 @@ export function FarmDashboard({ active }: { active: boolean }) {
     onSettled: () => { utils.farm.plots.invalidate(); },
   });
 
+  const [view, setView] = useState<'scene' | 'list'>('scene');
   const [filter, setFilter] = useState<Filter>('all');
   const [inspectPlot, setInspectPlot] = useState<Plot | null>(null);
   const [fertilizePlot, setFertilizePlot] = useState<Plot | null>(null);
@@ -431,47 +433,72 @@ export function FarmDashboard({ active }: { active: boolean }) {
       <div className="max-w-7xl mx-auto p-5">
         <MorningHarvestSummary plots={plots} />
 
-        <div className="flex items-center gap-2 mb-4 flex-wrap">
-          {filters.map((f) => (
-            <button
-              key={f.key}
-              onClick={() => setFilter(f.key)}
-              className="px-3 py-1 rounded-full text-xs font-medium transition-colors"
-              style={{
-                background: filter === f.key ? 'var(--accent)' : 'var(--bg-secondary)',
-                color: filter === f.key ? 'white' : 'var(--text-secondary)',
-                border: '1px solid var(--border)',
-              }}
-            >
-              {f.label}
-            </button>
-          ))}
+        <div className="flex gap-2 mb-4">
+          <button
+            onClick={() => setView('scene')}
+            className="px-3 py-1 rounded-full text-xs font-medium transition-colors"
+            style={{ background: view === 'scene' ? 'var(--accent)' : 'var(--bg-secondary)', color: view === 'scene' ? 'white' : 'var(--text-secondary)', border: '1px solid var(--border)' }}
+          >🌾 Farm</button>
+          <button
+            onClick={() => setView('list')}
+            className="px-3 py-1 rounded-full text-xs font-medium transition-colors"
+            style={{ background: view === 'list' ? 'var(--accent)' : 'var(--bg-secondary)', color: view === 'list' ? 'white' : 'var(--text-secondary)', border: '1px solid var(--border)' }}
+          >☰ List</button>
         </div>
 
-        {isLoading ? (
-          <div className="flex items-center justify-center py-20 gap-2" style={{ color: 'var(--text-secondary)' }}>
-            <Loader2 className="w-5 h-5 animate-spin" /> Tending the farm…
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-2 text-center" style={{ color: 'var(--text-secondary)' }}>
-            <Sprout className="w-10 h-10" />
-            <p className="text-sm">No crops here yet.</p>
-            <p className="text-xs">Plant a task (start a session) and watch it grow.</p>
+        {view === 'scene' ? (
+          <div style={{ height: '72vh' }} className="rounded-xl overflow-hidden border" >
+            <FarmScene
+              active={active && view === 'scene'}
+              onInspect={(p) => setInspectPlot(p)}
+              onPlantEmpty={() => { /* Phase 2: open SeedPacketPicker */ }}
+            />
           </div>
         ) : (
-          <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))' }}>
-            {filtered.map((plot) => (
-              <FarmPlotCard
-                key={plot.plotId}
-                plot={plot}
-                onInspect={() => setInspectPlot(plot)}
-                onFertilize={() => setFertilizePlot(plot)}
-                onHarvest={() => setHarvestPlot(plot)}
-                onKill={() => killMutation.mutate({ id: plot.terminalSessionId })}
-                killing={killMutation.isPending && killMutation.variables?.id === plot.terminalSessionId}
-              />
-            ))}
-          </div>
+          <>
+            <div className="flex items-center gap-2 mb-4 flex-wrap">
+              {filters.map((f) => (
+                <button
+                  key={f.key}
+                  onClick={() => setFilter(f.key)}
+                  className="px-3 py-1 rounded-full text-xs font-medium transition-colors"
+                  style={{
+                    background: filter === f.key ? 'var(--accent)' : 'var(--bg-secondary)',
+                    color: filter === f.key ? 'white' : 'var(--text-secondary)',
+                    border: '1px solid var(--border)',
+                  }}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+
+            {isLoading ? (
+              <div className="flex items-center justify-center py-20 gap-2" style={{ color: 'var(--text-secondary)' }}>
+                <Loader2 className="w-5 h-5 animate-spin" /> Tending the farm…
+              </div>
+            ) : filtered.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 gap-2 text-center" style={{ color: 'var(--text-secondary)' }}>
+                <Sprout className="w-10 h-10" />
+                <p className="text-sm">No crops here yet.</p>
+                <p className="text-xs">Plant a task (start a session) and watch it grow.</p>
+              </div>
+            ) : (
+              <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))' }}>
+                {filtered.map((plot) => (
+                  <FarmPlotCard
+                    key={plot.plotId}
+                    plot={plot}
+                    onInspect={() => setInspectPlot(plot)}
+                    onFertilize={() => setFertilizePlot(plot)}
+                    onHarvest={() => setHarvestPlot(plot)}
+                    onKill={() => killMutation.mutate({ id: plot.terminalSessionId })}
+                    killing={killMutation.isPending && killMutation.variables?.id === plot.terminalSessionId}
+                  />
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
 
