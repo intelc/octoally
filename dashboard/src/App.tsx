@@ -5,7 +5,8 @@ import { connectStream, useStreamStore, setQueryClient } from './lib/websocket';
 import { api } from './lib/api';
 import { ProjectDashboard } from './components/ProjectDashboard';
 import { ProjectView, cleanupProjectStorage } from './components/ProjectView';
-import { X, LayoutGrid, FolderOpen, Monitor, Settings, ArrowUpCircle } from 'lucide-react';
+import { X, LayoutGrid, FolderOpen, Monitor, Settings, ArrowUpCircle, Sprout } from 'lucide-react';
+import { FarmDashboard } from './components/FarmDashboard';
 import { isDesktop, isElectron, getDesktopVersion } from './lib/tauri';
 import { AgentGuideButton } from './components/AgentGuide';
 import { CloseTabModal } from './components/CloseTabModal';
@@ -582,6 +583,19 @@ function Dashboard() {
           Projects
         </button>
 
+        {/* Farm tab */}
+        <button
+          onClick={() => { setActiveTab('farm'); dismissActiveTerminals(); }}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors shrink-0"
+          style={{
+            background: activeTab === 'farm' ? 'var(--bg-tertiary)' : 'transparent',
+            color: activeTab === 'farm' ? 'var(--text-primary)' : 'var(--text-secondary)',
+          }}
+        >
+          <Sprout className="w-3.5 h-3.5" style={{ color: '#4ade80' }} />
+          Farm
+        </button>
+
         {/* Divider */}
         {projectTabs.length > 0 && (
           <div
@@ -656,6 +670,12 @@ function Dashboard() {
             active={activeTab === 'home'}
             onSelectedProjectChange={(id) => { homeSelectedProjectIdRef.current = id; }}
           />
+        </div>
+        <div
+          className="h-full"
+          style={{ display: activeTab === 'farm' ? 'block' : 'none' }}
+        >
+          <FarmDashboard active={activeTab === 'farm'} />
         </div>
         {projectTabs.map((tab) => {
           const tabId = `project-${tab.projectId}`;

@@ -120,3 +120,14 @@ select:hover {
 .markdown-preview input[type="checkbox"] {
   margin-right: 0.5em;
 }
+
+/* ---- Agent Farm crop sprite animations ---- */
+@keyframes farm-sway { 0%,100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
+@keyframes farm-bob  { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+@keyframes farm-pulse{ 0%,100% { opacity: 1; } 50% { opacity: 0.55; } }
+.farm-sway  { animation: farm-sway 3s ease-in-out infinite; transform-origin: bottom center; }
+.farm-bob   { animation: farm-bob 2s ease-in-out infinite; }
+.farm-pulse { animation: farm-pulse 1.6s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .farm-sway, .farm-bob, .farm-pulse { animation: none; }
+}
