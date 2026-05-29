@@ -15,10 +15,11 @@ export function IsoTile({
       alt=""
       onClick={onClick}
       style={{
-        width: tileW, height: tileH * 1.4, objectFit: 'contain',
+        width: tileW * 1.5, height: 'auto', display: 'block',
+        marginLeft: tileW * -0.25, marginTop: tileH * -0.4,
         cursor: onClick ? 'pointer' : 'default',
-        opacity: empty ? 0.85 : 1,
-        filter: empty ? 'saturate(0.6)' : undefined,
+        opacity: empty ? 0.9 : 1,
+        filter: empty ? 'saturate(0.55) brightness(1.08)' : undefined,
       }}
     />
   );

@@ -9,12 +9,12 @@ export function PlotSprite({ plot, tileW, onClick }: { plot: Plot; tileW: number
       onClick={onClick}
       title={`${plot.crop.name} — ${plot.state} · ${plot.taskName}`}
       style={{
-        position: 'absolute', left: 0, bottom: tileW * 0.18,
+        position: 'absolute', left: '50%', bottom: tileW * 0.12,
         transform: 'translateX(-50%)', background: 'none', border: 'none',
-        cursor: 'pointer', padding: 0,
+        cursor: 'pointer', padding: 0, zIndex: 2,
       }}
     >
-      <CropSprite kind={plot.crop.kind as CropKind} state={plot.state as PlotState} size={tileW * 0.8} />
+      <CropSprite kind={plot.crop.kind as CropKind} state={plot.state as PlotState} size={tileW * 0.66} />
     </button>
   );
 }

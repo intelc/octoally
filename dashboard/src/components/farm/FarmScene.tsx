@@ -4,8 +4,8 @@ import { IsoTile } from './IsoTile';
 import { PlotSprite } from './PlotSprite';
 import { useFarmGame, type Plot } from '../../farm/useFarmGame';
 
-const TILE_W = 128;
-const TILE_H = 64;
+const TILE_W = 132;
+const TILE_H = 66;
 const COLS = 5;
 const ROWS = 4;
 
@@ -62,7 +62,7 @@ export function FarmScene({
       <div
         style={{
           position: 'absolute',
-          left: `calc(50% + ${pan.x}px)`, top: `calc(20% + ${pan.y}px)`,
+          left: `calc(50% + ${pan.x}px)`, top: `calc(14% + ${pan.y}px)`,
           width: fieldW, height: fieldH,
         }}
       >
