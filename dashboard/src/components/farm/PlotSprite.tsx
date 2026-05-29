@@ -13,6 +13,10 @@ export function PlotSprite({
     : eligible
       ? 'drop-shadow(0 0 6px rgba(120,255,140,0.95))'
       : undefined;
+  // While a tool is armed (eligible|dimmed): keep the tool cursor over eligible
+  // targets (inherit from the scene), show not-allowed over invalid ones.
+  const toolActive = !!eligible || !!dimmed;
+  const cursor = toolActive ? (eligible ? 'inherit' : 'not-allowed') : 'pointer';
   return (
     <button
       onClick={onClick}
@@ -22,7 +26,7 @@ export function PlotSprite({
         position: 'absolute', left: '50%', bottom: tileW * 0.12,
         transform: `translateX(-50%) scale(${selected ? 1.12 : eligible ? 1.06 : 1})`,
         transformOrigin: 'bottom center',
-        background: 'none', border: 'none', cursor: 'pointer', padding: 0, zIndex: 2,
+        background: 'none', border: 'none', cursor, padding: 0, zIndex: 2,
         filter: glow,
         opacity: dimmed ? 0.35 : 1,
         transition: 'opacity 0.2s',

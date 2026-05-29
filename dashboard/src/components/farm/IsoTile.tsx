@@ -4,11 +4,13 @@ const VARIANTS = ['normal', 'dark', 'red'] as const;
 
 /** A single isometric soil tile. `seed` picks a stable soil variant for visual variety. */
 export function IsoTile({
-  tileW, tileH, empty, seed = 0, onClick,
+  tileW, tileH, empty, seed = 0, toolActive, onClick,
 }: {
-  tileW: number; tileH: number; empty?: boolean; seed?: number; onClick?: () => void;
+  tileW: number; tileH: number; empty?: boolean; seed?: number; toolActive?: boolean; onClick?: () => void;
 }) {
   const variant = VARIANTS[seed % VARIANTS.length];
+  // Empty tile plants on click — but planting is disabled while a tool is armed.
+  const cursor = empty ? (toolActive ? 'not-allowed' : 'pointer') : 'default';
   return (
     <img
       src={soilSprite(variant)}
@@ -17,7 +19,7 @@ export function IsoTile({
       style={{
         width: tileW * 1.5, height: 'auto', display: 'block',
         marginLeft: tileW * -0.25, marginTop: tileH * -0.4,
-        cursor: onClick ? 'pointer' : 'default',
+        cursor,
         opacity: empty ? 0.9 : 1,
         filter: empty ? 'saturate(0.55) brightness(1.08)' : undefined,
       }}

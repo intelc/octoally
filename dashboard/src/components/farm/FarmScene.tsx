@@ -152,6 +152,7 @@ export function FarmScene({
               tileW={TILE_W} tileH={TILE_H}
               empty={!cell.plot}
               seed={cell.col + cell.row * 7}
+              toolActive={!!tool}
               onClick={!cell.plot ? () => { if (!drag.current?.moved && !tool) onPlantEmpty(); } : undefined}
             />
             {cell.plot && (
