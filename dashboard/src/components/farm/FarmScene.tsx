@@ -6,7 +6,22 @@ import { FarmHud } from './FarmHud';
 import { FarmToolbar, type ToolId } from './FarmToolbar';
 import { SceneDecor } from './SceneDecor';
 import { PlotTooltip } from './PlotTooltip';
+import { FarmBurst } from './FarmBurst';
 import { useFarmGame, type Plot } from '../../farm/useFarmGame';
+
+/** Custom cursor showing the active tool's emoji (tip at bottom-left). */
+function toolCursor(tool: ToolId): string {
+  const e = tool === 'water' ? '💧' : tool === 'harvest' ? '🌾' : '🪏';
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='44' height='44'><text x='4' y='34' font-size='34'>${e}</text></svg>`;
+  return `url("data:image/svg+xml,${encodeURIComponent(svg)}") 8 36, cell`;
+}
+
+/** Which plot states a tool can act on (for highlight + intent). */
+function eligibleForTool(state: string, tool: ToolId): boolean {
+  if (tool === 'harvest') return state === 'ripe';
+  if (tool === 'water') return ['seeded', 'growing', 'thirsty', 'resting', 'bugged', 'withered'].includes(state);
+  return true; // dig clears anything
+}
 
 const TILE_W = 128;
 const TILE_H = 64;
@@ -58,6 +73,7 @@ export function FarmScene({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hoverId, setHoverId] = useState<string | null>(null);
   const [tool, setTool] = useState<ToolId | null>(null); // active batch tool
+  const [burst, setBurst] = useState<'harvest' | 'levelup' | null>(null);
   const selected = plots.find((p) => p.plotId === selectedId) ?? null;
   const hovered = cells.find((c) => c.plot && c.plot.plotId === hoverId) ?? null;
   const ripeCount = plots.filter((p) => p.state === 'ripe').length;
@@ -69,6 +85,18 @@ export function FarmScene({
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [tool]);
+
+  // Celebrate level-ups (skip the initial 0 → N bump on first data load)
+  const prevLevel = useRef(hud.level);
+  useEffect(() => {
+    if (prevLevel.current > 0 && hud.level > prevLevel.current) setBurst('levelup');
+    prevLevel.current = hud.level;
+  }, [hud.level]);
+
+  const handleHarvestAll = () => {
+    if (ripeCount > 0) setBurst('harvest'); // celebrate; review modal opens when burst finishes
+    else onHarvestAll();
+  };
 
   // drag-to-pan
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -98,7 +126,7 @@ export function FarmScene({
       onPointerUp={() => { drag.current = null; }}
       onPointerLeave={() => { drag.current = null; }}
       className="h-full w-full overflow-hidden relative select-none"
-      style={{ background: 'linear-gradient(#bfe39a, #9fd17a 55%, #8ec96a)', cursor: tool ? 'cell' : 'grab' }}
+      style={{ background: 'linear-gradient(#bfe39a, #9fd17a 55%, #8ec96a)', cursor: tool ? toolCursor(tool) : 'grab' }}
     >
       <SceneDecor />
       {isLoading && (
@@ -131,6 +159,7 @@ export function FarmScene({
                 plot={cell.plot}
                 tileW={TILE_W}
                 selected={cell.plot.plotId === selectedId}
+                eligible={!!tool && eligibleForTool(cell.plot.state, tool)}
                 onClick={() => { if (!drag.current?.moved) handlePlotClick(cell.plot!); }}
               />
             )}
@@ -158,6 +187,13 @@ export function FarmScene({
         </div>
       )}
 
+      {burst && (
+        <FarmBurst
+          kind={burst}
+          onDone={() => { const wasHarvest = burst === 'harvest'; setBurst(null); if (wasHarvest) onHarvestAll(); }}
+        />
+      )}
+
       <FarmHud hud={hud} onShop={onShop} />
       <FarmToolbar
         selected={selected}
@@ -165,7 +201,7 @@ export function FarmScene({
         activeTool={tool}
         onToolToggle={(t) => setTool((cur) => (cur === t ? null : t))}
         onInspect={onInspect}
-        onHarvestAll={onHarvestAll}
+        onHarvestAll={handleHarvestAll}
         onWarehouse={onWarehouse}
       />
     </div>
