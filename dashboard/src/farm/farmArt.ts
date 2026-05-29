@@ -40,3 +40,18 @@ export function overlaySprite(key: OverlayKey): string {
 export function soilSprite(variant: 'normal' | 'dark' | 'red'): string {
   return `${BASE}/soil-${variant}.png`;
 }
+
+export type DecorName = 'house' | 'pond' | 'tree' | 'fence' | 'farmer';
+export function decorSprite(name: DecorName): string {
+  return `${BASE}/decor-${name}.png`;
+}
+
+/** Seed-packet catalog for the 商店 shop (frontend flavor; crop visual is still task-derived). */
+export const CROP_CATALOG: { kind: CropKind; name: string; emoji: string; hint: string; price: number }[] = [
+  { kind: 'bugfix',   name: 'Bugfix Berry',  emoji: '🍓', hint: 'Fix the bug: ',         price: 163 },
+  { kind: 'feature',  name: 'Feature Apple', emoji: '🍎', hint: 'Implement: ',           price: 195 },
+  { kind: 'refactor', name: 'Refactor Corn', emoji: '🌽', hint: 'Refactor: ',            price: 175 },
+  { kind: 'test',     name: 'Test Grape',    emoji: '🍇', hint: 'Write tests for: ',     price: 168 },
+  { kind: 'docs',     name: 'Docs Carrot',   emoji: '🥕', hint: 'Document: ',            price: 125 },
+  { kind: 'generic',  name: 'Sprout',        emoji: '🌱', hint: '',                      price: 80 },
+];

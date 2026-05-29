@@ -4,6 +4,7 @@ import { IsoTile } from './IsoTile';
 import { PlotSprite } from './PlotSprite';
 import { FarmHud } from './FarmHud';
 import { FarmToolbar } from './FarmToolbar';
+import { SceneDecor } from './SceneDecor';
 import { useFarmGame, type Plot } from '../../farm/useFarmGame';
 
 const TILE_W = 132;
@@ -66,6 +67,7 @@ export function FarmScene({
       className="h-full w-full overflow-hidden relative select-none"
       style={{ background: 'linear-gradient(#bfe39a, #9fd17a 55%, #8ec96a)', cursor: 'grab' }}
     >
+      <SceneDecor />
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center text-sm" style={{ color: '#3a5a22' }}>
           Tending the farm…

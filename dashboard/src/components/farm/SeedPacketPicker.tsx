@@ -7,7 +7,7 @@ import { Sprout, X, Plus, Loader2, FolderOpen } from 'lucide-react';
  * Plant a new crop = start a new agent session.
  * Steps: pick project (or create one) → CLI + optional specialist agent → prompt → Plant.
  */
-export function SeedPacketPicker({ onClose, onPlanted }: { onClose: () => void; onPlanted: () => void }) {
+export function SeedPacketPicker({ onClose, onPlanted, promptHint = '' }: { onClose: () => void; onPlanted: () => void; promptHint?: string }) {
   const projectsQ = useQuery({ queryKey: ['projects'], queryFn: () => api.projects.list() });
   const projects = projectsQ.data?.projects ?? [];
 
@@ -16,7 +16,7 @@ export function SeedPacketPicker({ onClose, onPlanted }: { onClose: () => void; 
   const [creating, setCreating] = useState(false);
   const [cliType, setCliType] = useState<'claude' | 'codex'>('claude');
   const [agentType, setAgentType] = useState<string>(''); // '' = plain session
-  const [prompt, setPrompt] = useState('');
+  const [prompt, setPrompt] = useState(promptHint);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -75,7 +75,7 @@ export function SeedPacketPicker({ onClose, onPlanted }: { onClose: () => void; 
   });
 
   return (
-    <div className="absolute inset-0 z-40 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={onClose}>
+    <div className="fixed inset-0 z-40 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={onClose}>
       <div
         className="w-full max-w-lg rounded-xl p-5 flex flex-col gap-4 max-h-[85vh] overflow-auto"
         style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}

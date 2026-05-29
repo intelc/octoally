@@ -14,6 +14,8 @@ import { trpc } from '../lib/trpc';
 import { Terminal } from './Terminal';
 import { FarmScene } from './farm/FarmScene';
 import { SeedPacketPicker } from './farm/SeedPacketPicker';
+import { ShopModal } from './farm/ShopModal';
+import { Warehouse } from './farm/Warehouse';
 import {
   Sprout, Eye, Trash2, X, FlaskConical,
   Wheat, RefreshCw, Loader2, Send,
@@ -403,6 +405,9 @@ export function FarmDashboard({ active }: { active: boolean }) {
 
   const [view, setView] = useState<'scene' | 'list'>('scene');
   const [planting, setPlanting] = useState(false);
+  const [plantHint, setPlantHint] = useState('');
+  const [shopOpen, setShopOpen] = useState(false);
+  const [warehouseOpen, setWarehouseOpen] = useState(false);
   const [filter, setFilter] = useState<Filter>('all');
   const [inspectPlot, setInspectPlot] = useState<Plot | null>(null);
   const [fertilizePlot, setFertilizePlot] = useState<Plot | null>(null);
@@ -458,8 +463,8 @@ export function FarmDashboard({ active }: { active: boolean }) {
               onHarvest={(p) => setHarvestPlot(p)}
               onHarvestAll={() => { const r = plots.find((p) => p.state === 'ripe'); if (r) setHarvestPlot(r); }}
               onKill={(p) => killMutation.mutate({ id: p.terminalSessionId })}
-              onWarehouse={() => setView('list')}
-              onShop={() => setPlanting(true)}
+              onWarehouse={() => setWarehouseOpen(true)}
+              onShop={() => setShopOpen(true)}
             />
           </div>
         ) : (
@@ -511,7 +516,16 @@ export function FarmDashboard({ active }: { active: boolean }) {
       </div>
 
       {/* Overlays */}
-      {planting && <SeedPacketPicker onClose={() => setPlanting(false)} onPlanted={() => utils.farm.plots.invalidate()} />}
+      {shopOpen && (
+        <ShopModal
+          onClose={() => setShopOpen(false)}
+          onPick={(_kind, hint) => { setPlantHint(hint); setShopOpen(false); setPlanting(true); }}
+        />
+      )}
+      {warehouseOpen && (
+        <Warehouse plots={plots} onClose={() => setWarehouseOpen(false)} onInspect={(p) => { setWarehouseOpen(false); setInspectPlot(p); }} />
+      )}
+      {planting && <SeedPacketPicker promptHint={plantHint} onClose={() => { setPlanting(false); setPlantHint(''); }} onPlanted={() => utils.farm.plots.invalidate()} />}
       {freshInspect && <TerminalDrawer plot={freshInspect} onClose={() => setInspectPlot(null)} />}
       {fertilizePlot && <FertilizeModal plot={fertilizePlot} onClose={() => setFertilizePlot(null)} />}
       {harvestPlot && (
