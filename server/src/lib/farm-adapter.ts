@@ -232,14 +232,26 @@ function deriveHarvestValue(
 /* Pure mapper                                                         */
 /* ------------------------------------------------------------------ */
 
+/**
+ * Parse a timestamp from the DB. SQLite's datetime('now') yields
+ * "YYYY-MM-DD HH:MM:SS" in UTC, which Date.parse handles inconsistently —
+ * normalize to ISO (T separator + Z) first. Already-ISO strings pass through.
+ */
+function parseDbTime(s: string | null | undefined): number {
+  if (!s) return NaN;
+  if (s.includes('T')) return Date.parse(s);
+  return Date.parse(s.replace(' ', 'T') + 'Z');
+}
+
 export function sessionToPlot(input: SessionToPlotInput): FarmPlot {
   const { session, now, live, filesChanged = null, tokens = null } = input;
 
   const crop = classifyCrop(session.task);
   const state = deriveState(session, live, now);
 
-  const startMs = session.started_at ? Date.parse(session.started_at) : Date.parse(session.created_at);
-  const endMs = session.completed_at ? Date.parse(session.completed_at) : now;
+  const startMs = parseDbTime(session.started_at ?? session.created_at);
+  const endRaw = session.completed_at ? parseDbTime(session.completed_at) : now;
+  const endMs = Number.isNaN(endRaw) ? now : endRaw;
   const elapsedMs = Math.max(0, endMs - (Number.isNaN(startMs) ? endMs : startMs));
 
   return {
