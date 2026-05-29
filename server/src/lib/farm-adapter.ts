@@ -89,6 +89,7 @@ export interface SessionRow {
   created_at: string;
   cli_type?: string | null;
   claude_session_id?: string | null;
+  codex_rollout_path?: string | null;
 }
 
 /** Live state from the SessionStateTracker (may be absent). */
@@ -300,6 +301,9 @@ export function buildPlot(session: SessionRow, deps: BuildPlotDeps): FarmPlot {
       cliType,
       cwd,
       claudeUuid: session.claude_session_id ?? undefined,
+      // Prefer the rollout captured at spawn; readSessionTokens falls back to
+      // cwd-matching when this is absent (e.g. sessions started before this).
+      codexRolloutPath: session.codex_rollout_path ?? undefined,
     });
   }
 

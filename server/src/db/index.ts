@@ -110,6 +110,8 @@ export function initDb(): void {
   try { db.exec('ALTER TABLE projects ADD COLUMN skip_permissions INTEGER DEFAULT 0'); } catch {}
   // Codex support: track which CLI (claude or codex) launched the session
   try { db.exec("ALTER TABLE sessions ADD COLUMN cli_type TEXT DEFAULT 'claude'"); } catch {}
+  // Agent Farm: captured Codex rollout jsonl path (analogue of claude_session_id)
+  try { db.exec('ALTER TABLE sessions ADD COLUMN codex_rollout_path TEXT'); } catch {}
   // ruflo deprecation: seed disposition setting
   try { db.exec("INSERT OR IGNORE INTO settings (key, value) VALUES ('ruflo_disposition', 'undecided')"); } catch {}
 

@@ -11,7 +11,8 @@ import { config } from '../config.js';
 import { getSetting } from '../routes/settings.js';
 import { nanoid } from 'nanoid';
 import type { WebSocket } from 'ws';
-import { getOrCreateTracker, removeTracker, recoverFromBuffer } from './session-state.js';
+import { getOrCreateTracker, getTracker, removeTracker, recoverFromBuffer } from './session-state.js';
+import { snapshotCodexRollouts, discoverNewCodexRollout } from '../lib/token-reader.js';
 
 const nodeRequire = createRequire(import.meta.url);
 const { Terminal: HeadlessTerminal } = nodeRequire('@xterm/headless') as { Terminal: any };
@@ -571,6 +572,35 @@ function snapshotClaudeSessionFiles(projectPath: string): Set<string> {
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 /**
+ * Capture the Codex rollout jsonl path for a session — the Codex analogue of
+ * Claude's UUID capture. `preSnapshot` MUST be taken before the worker spawns.
+ * On the first idle/waiting state change (by which point Codex has written its
+ * rollout), diff ~/.codex/sessions for the new file whose meta.cwd matches and
+ * persist it to sessions.codex_rollout_path.
+ */
+function captureCodexRollout(sessionId: string, projectPath: string, preSnapshot: Set<string>): void {
+  const tracker = getTracker(sessionId);
+  if (!tracker) return;
+  let done = false;
+  const unsub = tracker.onStateChange((state) => {
+    if (done) return;
+    if (state.processState === 'waiting_for_input' || state.processState === 'idle') {
+      done = true;
+      unsub();
+      try {
+        const rollout = discoverNewCodexRollout(preSnapshot, projectPath);
+        if (rollout) {
+          getDb()
+            .prepare('UPDATE sessions SET codex_rollout_path = ? WHERE id = ? AND codex_rollout_path IS NULL')
+            .run(rollout, sessionId);
+          console.log(`  Captured Codex rollout ${rollout} for session ${sessionId}`);
+        }
+      } catch { /* ignore */ }
+    }
+  });
+}
+
+/**
  * Fork a PTY worker and wire up IPC message handlers.
  * The worker runs in a separate process, isolating all blocking PTY/tmux
  * operations from the main Fastify event loop.
@@ -867,12 +897,14 @@ export function createSession(_projectPath: string, task: string, projectId?: st
 
 export async function spawnSession(sessionId: string, projectPath: string, task: string, cols = 180, rows = 40, cliType: 'claude' | 'codex' = 'claude'): Promise<void> {
   const preSpawnFiles = snapshotClaudeSessionFiles(projectPath);
+  const preCodexRollouts = cliType === 'codex' ? snapshotCodexRollouts() : null;
 
   const worker = await forkWorker();
   const active = wireWorker(sessionId, worker, projectPath, preSpawnFiles);
   active.cols = cols;
   active.task = task;
   active.cliType = cliType;
+  if (preCodexRollouts) captureCodexRollout(sessionId, projectPath, preCodexRollouts);
 
   let sessionCommand = cliType === 'codex'
     ? getSetting('session_codex_command')
@@ -935,12 +967,14 @@ export async function spawnTerminal(sessionId: string, projectPath: string, cols
 
 export async function spawnAgent(sessionId: string, projectPath: string, task: string, agentType: string, cols = 180, rows = 40, cliType: 'claude' | 'codex' = 'claude'): Promise<void> {
   const preSpawnFiles = snapshotClaudeSessionFiles(projectPath);
+  const preCodexRollouts = cliType === 'codex' ? snapshotCodexRollouts() : null;
 
   const worker = await forkWorker();
   const active = wireWorker(sessionId, worker, projectPath, preSpawnFiles);
   active.cols = cols;
   active.task = `Agent (${agentType}): ${task}`;
   active.cliType = cliType;
+  if (preCodexRollouts) captureCodexRollout(sessionId, projectPath, preCodexRollouts);
 
   let sessionCommand = cliType === 'codex'
     ? getSetting('agent_codex_command')
