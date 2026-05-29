@@ -75,20 +75,23 @@ export function SeedPacketPicker({ onClose, onPlanted, promptHint = '' }: { onCl
   });
   const agents = agentsQ.data?.agents ?? [];
 
-  const pickFolder = async (path: string, folderName: string) => {
-    // already registered? just select it
-    const existing = projects.find((p) => p.path === path);
+  const pickFolder = async (rawPath: string, folderName: string) => {
+    const path = rawPath.replace(/\/+$/, '');
+    const norm = (s: string) => s.replace(/\/+$/, '');
+    setError(null);
+    // already registered (by normalized path)? reuse it
+    const existing = projects.find((p) => norm(p.path) === path);
     if (existing) { setProjectId(existing.id); setNewProject(false); return; }
     setCreating(true);
-    setError(null);
     try {
-      const name = folderName || path.replace(/\/+$/, '').split('/').pop() || path;
-      const res = await api.projects.create({ name, path });
-      await projectsQ.refetch();
-      setProjectId(res.project.id);
-      setNewProject(false);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to add project');
+      const name = folderName || path.split('/').pop() || path;
+      try {
+        await api.projects.create({ name, path });
+      } catch { /* may 409 if already registered under a different normalization — look it up below */ }
+      const fresh = await projectsQ.refetch();
+      const proj = fresh.data?.projects.find((p) => norm(p.path) === path) ?? null;
+      if (proj) { setProjectId(proj.id); setNewProject(false); }
+      else setError('Could not register that folder');
     } finally {
       setCreating(false);
     }
