@@ -1,7 +1,53 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../lib/api';
-import { Sprout, X, Plus, Loader2, CornerDownLeft } from 'lucide-react';
+import { Sprout, X, Loader2, CornerDownLeft, ArrowUp, ChevronRight, FolderOpen, Check } from 'lucide-react';
+
+/** Parchment-themed directory browser (reuses the server /browse API). */
+function FolderBrowser({ onPick, busy }: { onPick: (path: string, name: string) => void; busy: boolean }) {
+  const [browsePath, setBrowsePath] = useState<string | undefined>(undefined);
+  const { data, isLoading } = useQuery({ queryKey: ['browse', browsePath], queryFn: () => api.projects.browse(browsePath) });
+  return (
+    <div className="rounded-xl overflow-hidden" style={{ border: '2px solid #c79a52', background: '#fffaf0' }}>
+      <div className="flex items-center gap-2 px-2.5 py-1.5" style={{ background: '#f3e0b8', borderBottom: '2px solid #e6cd96' }}>
+        {data?.parent && (
+          <button onClick={() => setBrowsePath(data.parent!)} title="Up" className="p-0.5 rounded" style={{ color: '#8a5a2a' }}><ArrowUp className="w-3.5 h-3.5" /></button>
+        )}
+        <span className="truncate text-[11px] font-mono" style={{ color: '#7a531a' }}>{data?.path || '~'}</span>
+        <button
+          onClick={() => { if (data?.path && !busy) onPick(data.path, data.folderName); }}
+          disabled={busy}
+          className="ml-auto flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-bold shrink-0 disabled:opacity-50"
+          style={{ background: '#6cc24a', color: '#fff', border: '2px solid #4a9a2e' }}
+        >
+          {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />} Use this folder
+        </button>
+      </div>
+      <div className="max-h-48 overflow-y-auto">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-5"><Loader2 className="w-4 h-4 animate-spin" style={{ color: '#b07b3a' }} /></div>
+        ) : data?.dirs.length === 0 ? (
+          <div className="py-3 text-center text-[11px]" style={{ color: '#a98c5a' }}>No subfolders</div>
+        ) : (
+          data?.dirs.map((dir) => (
+            <button
+              key={dir.path}
+              onClick={() => setBrowsePath(dir.path)}
+              onDoubleClick={() => !busy && onPick(dir.path, dir.name)}
+              className="w-full flex items-center gap-2 px-2.5 py-1.5 text-sm text-left"
+              style={{ color: '#5a3d12' }}
+              title="Click to open · double-click to use"
+            >
+              <FolderOpen className="w-4 h-4 shrink-0" style={{ color: '#c2410c' }} />
+              <span className="truncate">{dir.name}</span>
+              {dir.hasChildren && <ChevronRight className="w-3 h-3 ml-auto shrink-0" style={{ color: '#b07b3a' }} />}
+            </button>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
 
 /**
  * Plant a new crop = start a new agent session.
@@ -14,7 +60,6 @@ export function SeedPacketPicker({ onClose, onPlanted, promptHint = '' }: { onCl
 
   const [projectId, setProjectId] = useState<string | null>(null);
   const [newProject, setNewProject] = useState(false);
-  const [newPath, setNewPath] = useState('');
   const [creating, setCreating] = useState(false);
   const [cliType, setCliType] = useState<'claude' | 'codex'>('claude');
   const [agentType, setAgentType] = useState<string>('');
@@ -30,18 +75,18 @@ export function SeedPacketPicker({ onClose, onPlanted, promptHint = '' }: { onCl
   });
   const agents = agentsQ.data?.agents ?? [];
 
-  const createProject = async () => {
-    const path = newPath.trim();
-    if (!path) return;
+  const pickFolder = async (path: string, folderName: string) => {
+    // already registered? just select it
+    const existing = projects.find((p) => p.path === path);
+    if (existing) { setProjectId(existing.id); setNewProject(false); return; }
     setCreating(true);
     setError(null);
     try {
-      const name = path.replace(/\/+$/, '').split('/').pop() || path;
+      const name = folderName || path.replace(/\/+$/, '').split('/').pop() || path;
       const res = await api.projects.create({ name, path });
       await projectsQ.refetch();
       setProjectId(res.project.id);
       setNewProject(false);
-      setNewPath('');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to add project');
     } finally {
@@ -72,7 +117,6 @@ export function SeedPacketPicker({ onClose, onPlanted, promptHint = '' }: { onCl
     }
   };
 
-  // ── theme tokens (parchment/wood, matching the shop) ──
   const chip: React.CSSProperties = {
     background: '#fff8e6', color: '#7a531a', border: '2px solid #d6a64a',
     borderRadius: 9, padding: '4px 8px', fontSize: 12, fontWeight: 700,
@@ -89,7 +133,6 @@ export function SeedPacketPicker({ onClose, onPlanted, promptHint = '' }: { onCl
         style={{ background: '#f3e0b8', border: '3px solid #b07b3a', boxShadow: '0 12px 40px rgba(0,0,0,0.4)' }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Ribbon header */}
         <div className="relative flex items-center justify-center py-2.5" style={{ background: '#ff8a3d', borderBottom: '3px solid #d96a20' }}>
           <span className="text-lg font-black flex items-center gap-2" style={{ color: '#fff', textShadow: '0 2px 0 #d96a20' }}>
             <Sprout className="w-5 h-5" /> 种地 · Plant a Crop
@@ -98,7 +141,6 @@ export function SeedPacketPicker({ onClose, onPlanted, promptHint = '' }: { onCl
         </div>
 
         <div className="p-4 flex flex-col gap-3">
-          {/* Composer card — prompt is the hero */}
           <div className="rounded-xl flex flex-col" style={{ background: '#fffaf0', border: '2px solid #c79a52' }}>
             <textarea
               autoFocus
@@ -110,28 +152,24 @@ export function SeedPacketPicker({ onClose, onPlanted, promptHint = '' }: { onCl
               className="w-full bg-transparent resize-none outline-none p-3 text-sm"
               style={{ color: '#5a3d12' }}
             />
-            {/* Control row: project · CLI · agent · Plant (composer-style) */}
             <div className="flex items-center gap-2 flex-wrap px-2.5 py-2" style={{ borderTop: '1px solid #e6cd96' }}>
-              {/* Project */}
               <select
-                value={projectId ?? ''}
-                onChange={(e) => { if (e.target.value === '__new__') { setNewProject(true); } else { setProjectId(e.target.value || null); setNewProject(false); } }}
+                value={newProject ? '__new__' : (projectId ?? '')}
+                onChange={(e) => { if (e.target.value === '__new__') { setNewProject(true); setProjectId(null); } else { setProjectId(e.target.value || null); setNewProject(false); } }}
                 style={{ ...chip, maxWidth: 180 }}
                 title="Soil — project"
               >
                 <option value="" disabled>📁 Pick project…</option>
                 {projects.map((p) => <option key={p.id} value={p.id}>📁 {p.name}</option>)}
-                <option value="__new__">＋ New project…</option>
+                <option value="__new__">📂 Browse for folder…</option>
               </select>
 
-              {/* CLI segmented */}
               <div className="flex rounded-lg overflow-hidden" style={{ border: '2px solid #d6a64a' }}>
                 {(['claude', 'codex'] as const).map((c) => (
                   <button key={c} onClick={() => setCliType(c)} style={seg(cliType === c)} className="capitalize">{c}</button>
                 ))}
               </div>
 
-              {/* Agent */}
               <select
                 value={agentType}
                 onChange={(e) => setAgentType(e.target.value)}
@@ -143,7 +181,6 @@ export function SeedPacketPicker({ onClose, onPlanted, promptHint = '' }: { onCl
                 {agents.map((a) => <option key={a.name} value={a.name}>🤖 {a.name}</option>)}
               </select>
 
-              {/* Plant (send) */}
               <button
                 onClick={plant}
                 disabled={!canPlant}
@@ -157,26 +194,9 @@ export function SeedPacketPicker({ onClose, onPlanted, promptHint = '' }: { onCl
             </div>
           </div>
 
-          {/* New-project inline row */}
-          {newProject && (
-            <div className="flex gap-1.5 items-center">
-              <Plus className="w-4 h-4" style={{ color: '#8a5a2a' }} />
-              <input
-                autoFocus
-                value={newPath}
-                onChange={(e) => setNewPath(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') createProject(); }}
-                placeholder="/abs/path/to/new/project"
-                className="flex-1 rounded-lg px-2.5 py-1.5 text-xs outline-none"
-                style={{ background: '#fffaf0', color: '#5a3d12', border: '2px solid #c79a52' }}
-              />
-              <button onClick={createProject} disabled={creating || !newPath.trim()} className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold disabled:opacity-50" style={{ background: '#fff8e6', color: '#7a531a', border: '2px solid #d6a64a' }}>
-                {creating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Add'}
-              </button>
-            </div>
-          )}
+          {/* Folder browser (replaces typing an absolute path) */}
+          {newProject && <FolderBrowser onPick={pickFolder} busy={creating} />}
 
-          {/* Hint + error */}
           <div className="flex items-center justify-between text-[11px]" style={{ color: '#a07636' }}>
             <span>{selected ? `Planting in ${selected.name} · ${agentType || 'quick session'}` : 'Pick soil to plant in'}</span>
             <span style={{ opacity: 0.8 }}>⌘↵ to plant</span>
